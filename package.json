@@ -1,0 +1,30 @@
+{
+  "name": "scanner",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node",
+    "build": "tsc",
+    "clean": "tsc --build --clean",
+    "dev": "ts-node"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@types/ws": "^8.5.13",
+    "bs58": "^5.0.0",
+    "decimal.js": "^10.4.3",
+    "eventemitter3": "^5.0.1",
+    "jsonfile": "^6.1.0",
+    "mongoose": "^8.8.1",
+    "scanner": "file:",
+    "typescript": "^5.3.3",
+    "websocket": "^1.0.35",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.5",
+    "npm-check-updates": "^16.14.11"
+  }
+}
