@@ -1,8 +1,12 @@
-// src/server.ts
+import express from 'express';
+import http from 'http';
 import WebSocket, { WebSocketServer } from 'ws';
 
+const app = express();
+const server = http.createServer(app);
+
 const port = 8080;
-const wss = new WebSocketServer({ port });
+const wss = new WebSocketServer({ server });
 
 // Store clients with their associated tags
 const clients: Record<string, WebSocket> = {};
@@ -39,6 +43,9 @@ const localSocket = async () => {
   });
   
   console.log(`Local Socket server is running on ws://localhost:${port}`);
+  server.listen(port, () => {
+    console.log(`Server started on http://localhost:${port}`);
+  });
 }
 
 export default localSocket;

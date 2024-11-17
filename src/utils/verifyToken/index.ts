@@ -284,9 +284,12 @@ const hasInsiderSnipe = async (rugCheckReportRaw: RugCheckTokenDetails) => {
       // }
       const percentageDifference = ((holderAmount - holderAmountNext) / holderAmount) * 100;
 
-      if (percentageDifference < 0.7) {
+      if (percentageDifference < 0.1 && percentageDifference > 0) {
         console.log('percentageDifference %', percentageDifference);
         console.log('❌ Insider Snipe Detected - Smart Play (%)', holderAmount, holderAmountNext);
+        problem.ownerAddress = holder.owner;
+        problem.holdAmount = holderAmount;
+        problem.percentage = holderPercentage;
         problem.linkedAaddress = {
           ownerAddress: collectAll[index + 1].owner,
           holdAmount: holderAmountNext,
@@ -295,11 +298,11 @@ const hasInsiderSnipe = async (rugCheckReportRaw: RugCheckTokenDetails) => {
       }
     }
 
-    // if (holder.owner === '11111111111111111111111111111111') {
-    //   problem.ownerAddress = '11111111111111111111111111111111'
-    //   problem.holdAmount = holder.amount;
-    //   problem.percentage = holder.pct;
-    // }
+    if (holder.owner === '11111111111111111111111111111111') {
+      problem.ownerAddress = '11111111111111111111111111111111'
+      problem.holdAmount = holder.amount;
+      problem.percentage = holder.pct > 90 ? holder.pct : 0;
+    }
 
     if (problem.holdAmount !== 0 || problem.percentage !== 0) {
       collectionOfSuspicious.push(problem);

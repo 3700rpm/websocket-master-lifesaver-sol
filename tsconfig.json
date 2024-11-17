@@ -10,6 +10,7 @@
     "sourceMap": true,
     "resolveJsonModule": false,
     "noEmit": false,
+    "skipDefaultLibCheck": true,
     "lib": ["DOM"],
   },
   "exclude": [
