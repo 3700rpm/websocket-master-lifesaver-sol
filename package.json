@@ -12,10 +12,13 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@metaplex-foundation/js": "^0.20.1",
+    "@types/express": "5.0.0",
     "@types/ws": "^8.5.13",
     "bs58": "^5.0.0",
     "decimal.js": "^10.4.3",
     "eventemitter3": "^5.0.1",
+    "express": "^4.21.1",
     "jsonfile": "^6.1.0",
     "mongoose": "^8.8.1",
     "scanner": "file:",

@@ -1,6 +1,8 @@
 import EventEmitter from "eventemitter3";
 import WebSocket from "ws";
 import { rugCheck, RugCheckMinSummary } from "./rugcheck";
+import { BloxRouteNewLiquidityPool } from "./interfaces/bloxRouteNewWebSocket";
+import { verifyToken } from "./utils/verifyToken";
 
 const BotsToAllocateSequentially = [
   // "A1",
@@ -112,7 +114,8 @@ class WebSocketService {
         const result = JSON.parse(eventful);
 
         if (result.method === "subscribe") {
-          const { slot, pool, timestamp } = result.params.result;
+          const { slot, pool, timestamp } = result.params.result as BloxRouteNewLiquidityPool;
+          console.log('result.params.result', result.params.result);
     
           // Prepare data for console.table
           let tokenAddress = ''
@@ -139,21 +142,18 @@ class WebSocketService {
           const tableData = [{
             Slot: slot,
             TokenSymbol: rugCheckResult.tokenMeta.symbol,
+            lpMint: pool.poolAddress,
             TokenAddress: tokenAddress,
             LaunchTime: timestamp,
             isPumpFun: tokenAddress.includes('pump'),
           }];
-          console.log('Date time to timestamp ms', new Date(timestamp).getTime());
+
           console.table(tableData);
-          console.table(rugCheckResult.risks);
+          console.log('Date time to timestamp ms', new Date(timestamp).getTime());
 
-          // Allocate to current bot
-          const bot = BotsToAllocateSequentially[currentBotIndex % BotsToAllocateSequentially.length];
-          console.log('Allocating to bot:', bot);
-          currentBot = bot;
-          this.localSocket?.send(JSON.stringify({ targetTag: bot, tokenAddress: tokenAddress, action: 'ALLOCATE_FOR', riskLevel: 'UNKNOWN' }));
+          await verifyToken(result.params.result as BloxRouteNewLiquidityPool);
 
-          currentBotIndex++;
+          // this.localSocket?.send(JSON.stringify({ targetTag: 'ext', tokenAddress: tokenAddress, poolAddress: pool.poolAddress }));
         }
         // const message: WebSocketMessage = JSON.parse(event.data);
         // if (message.type === "message") {

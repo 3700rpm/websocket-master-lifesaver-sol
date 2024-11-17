@@ -16,7 +16,7 @@ const localSocket = async () => {
       if (message.tag) {
         clients[message.tag] = ws;
         console.log(`Client with tag ${message.tag} connected`);
-      } else {
+      } else{
         console.log('Received message:', message);
       }
   
