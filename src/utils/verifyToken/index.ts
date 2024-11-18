@@ -123,7 +123,7 @@ const checkIfImmediateBondingCurveCompleted = (rugCheckReportRaw: RugCheckTokenD
   const timeDifference = lastAddedToRaydium - timeDetectedTimestamp;
   let effectiveTimeOfBondingCurve: string | null = null;
   console.log('✨ timeDifference', timeDifference);
-  if (timeDifference < 480000) {
+  if (timeDifference < 600000) {
     // return 'IMMEDIATE_BONDING_CURVE_COMPLETED';
     console.log('❌ IMMEDIATE_BONDING_CURVE_COMPLETED - GET RUGGED IMMEDIATELY');
     effectiveTimeOfBondingCurve = 'IMMEDIATE_BONDING_CURVE_COMPLETED';
@@ -224,6 +224,7 @@ interface ProblemData {
 const hasInsiderSnipe = async (rugCheckReportRaw: RugCheckTokenDetails) => {
   const RAYDIUM_AUTHORITY = '5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1';
   const PUMPFUN_AUTHORITY = '39azUYFWPz3VHgKCf3VChUwbpURdCHRxjWVowf5jUJjg';
+  // const SYSTEM_AUTHORITY = '11111111111111111111111111111111';
   const SAFE_HOLDER = [RAYDIUM_AUTHORITY, PUMPFUN_AUTHORITY];
 
   function countTrailingZeros(num: number) {
@@ -240,7 +241,7 @@ const hasInsiderSnipe = async (rugCheckReportRaw: RugCheckTokenDetails) => {
     }
   
     // Return count only if it's more than 1, otherwise return 0
-    return count > 1 ? count : 0;
+    return count > 2 ? count : 0;
   }
 
   const insiderSnipe = rugCheckReportRaw.topHolders;
