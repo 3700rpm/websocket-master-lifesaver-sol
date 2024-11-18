@@ -1,8 +1,7 @@
 import mongooseConnect from "./database";
 import { localSocket } from "./localSocket";
 import { solanaNewPoolStream } from "./solanaNewPoolStream";
-import express from "express";
-import websocket from "ws";
+import "dotenv/config";
 
 const start = async () => {
   await mongooseConnect();

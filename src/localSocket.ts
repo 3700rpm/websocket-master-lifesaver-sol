@@ -32,8 +32,6 @@ const localSocket = async (): Promise<void> => {
         ws.on('message', async (data: any) => {
           try {
             const message = JSON.parse(data.toString());
-
-            console.log('Received message:', message);
             // Check if the message includes a tag and associate the WebSocket with that tag
             if (message.tag) {
               clients[message.tag] = ws;

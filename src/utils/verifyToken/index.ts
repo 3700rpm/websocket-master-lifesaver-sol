@@ -2,7 +2,7 @@ import { Nft, Sft } from "@metaplex-foundation/js";
 import TokenLogger from "../../database/logger";
 import { BloxRouteNewLiquidityPool } from "../../interfaces/bloxRouteNewWebSocket";
 import rugCheckReport, { Holder, RugCheckTokenDetails } from "../../rugcheck/fullReport";
-import { isMintFreezeAuthorityDisabled } from "../metaplexChecker";
+import { getWhitelistAccountInfoOwner, isMintFreezeAuthorityDisabled } from "../metaplexChecker";
 import KNOWN_TOKENS from "../tokens/knownTokens";
 
 const verifyToken = async (payloadFromBloxRoute: BloxRouteNewLiquidityPool) => {
@@ -52,6 +52,7 @@ const verifyToken = async (payloadFromBloxRoute: BloxRouteNewLiquidityPool) => {
       risk: 'UNDEFINED',
       tokenFreeAuthority: checkFromMetaplex?.mint?.freezeAuthorityAddress === null ? 'NULL' : 'THREAT',
       tokenIsMintAuthority: checkFromMetaplex?.mint?.mintAuthorityAddress === null ? 'NULL' : 'THREAT',
+      lpMint: payloadFromBloxRoute.pool.poolAddress
     }
     await tokenLogger.findOneAndUpdate({
       tokenAddress: payload.tokenAddress,
@@ -249,8 +250,17 @@ const hasInsiderSnipe = async (rugCheckReportRaw: RugCheckTokenDetails) => {
   for await (const [index, holder] of insiderSnipe.entries()) {
     if (!SAFE_HOLDER.includes(holder.owner)) {
       if (holder.amount !== 0) {
-        collectAll.push(holder);
-        collectAllAmount.push(Math.round(holder.amount));
+        if (holder.pct > 20) {
+          // CHECK IF AUTHRORITY
+          const result = await getWhitelistAccountInfoOwner(holder.owner);
+          if (result === 'ACCOUNT_IS_WHITELISTED') {
+            console.log('✅ Authority Skipped');
+          } else {
+            collectAll.push(holder);
+          }
+        } else {
+          collectAll.push(holder);
+        }
       }
     } else if (SAFE_HOLDER.includes(holder.owner)) {
       console.log('✅ Raydium/PumpFun Authority Skipped');
@@ -320,4 +330,4 @@ const hasInsiderSnipe = async (rugCheckReportRaw: RugCheckTokenDetails) => {
   return collectionOfSuspicious
 }
 
-export { verifyToken };
+export { verifyToken, hasInsiderSnipe };

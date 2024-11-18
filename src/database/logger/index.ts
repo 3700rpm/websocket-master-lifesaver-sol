@@ -84,6 +84,10 @@ const loggerSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  lpMint: {
+    type: String,
+    required: false
+  },
 }, {
   timestamps: true
 });
