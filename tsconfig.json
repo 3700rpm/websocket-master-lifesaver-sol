@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
-    "outDir": "./js",
+    "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -13,7 +13,10 @@
     "skipDefaultLibCheck": true,
     "lib": ["DOM"],
   },
+  "include": ["src"],
   "exclude": [
-    "otherCode"
+    "otherCode",
+    "node_mudules",
+    "dist"
   ]
 }

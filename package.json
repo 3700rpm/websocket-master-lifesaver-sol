@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node",
+    "start": "node dist/index.js",
     "start_prod": "ts-node src/index.ts",
     "build": "tsc",
     "clean": "tsc --build --clean",
@@ -25,6 +25,7 @@
     "jsonfile": "^6.1.0",
     "mongoose": "^8.8.1",
     "scanner": "file:",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "websocket": "^1.0.35",
     "ws": "^8.18.0"
