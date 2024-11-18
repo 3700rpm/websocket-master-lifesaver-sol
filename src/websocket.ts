@@ -3,6 +3,7 @@ import WebSocket from "ws";
 import { rugCheck, RugCheckMinSummary } from "./rugcheck";
 import { BloxRouteNewLiquidityPool } from "./interfaces/bloxRouteNewWebSocket";
 import { verifyToken } from "./utils/verifyToken";
+import { extSockInstance } from "./shared/extSocks";
 
 const BotsToAllocateSequentially = [
   // "A1",
@@ -38,7 +39,7 @@ const subscribePayload = {
 class WebSocketService {
   private wsUrl: string;
   private socket: WebSocket | null;
-  private localSocket: WebSocket | null;
+  private localSocket: WebSocket.Server | null;
   private reconnectAttempts: number;
   private reconnectDelay: number;
   private reconnectDelayMax: number;
@@ -80,10 +81,10 @@ class WebSocketService {
         }
       });
 
-      this.localSocket = new WebSocket('ws://localhost:8080');
-
+      this.localSocket = extSockInstance.getSocket();
 
       this.setupSocketListeners(this.socket, "main");
+
       // this.setupSocketListeners(this.transactionSocket, "transaction");
     } catch (e) {
       console.error("Error connecting to WebSocket:", e);
@@ -108,69 +109,76 @@ class WebSocketService {
       this.reconnect();
     };
 
-    socket.onmessage = async (event: WebSocket.MessageEvent) => {
-      try {
-        const eventful = event.data as any;
-        const result = JSON.parse(eventful);
+    this.localSocket?.on('connection', async (ws: WebSocket) => {
+      socket.onmessage = async (event: WebSocket.MessageEvent) => {
+        try {
+            const eventful = event.data as any;
+            const result = JSON.parse(eventful);
 
-        if (result.method === "subscribe") {
-          const { slot, pool, timestamp } = result.params.result as BloxRouteNewLiquidityPool;
-          console.log('result.params.result', result.params.result);
-    
-          // Prepare data for console.table
-          let tokenAddress = ''
-          const tokenIsNative = pool.token1MintAddress === 'So11111111111111111111111111111111111111112' ? true : false;
+            if (result.method === "subscribe") {
+              const { slot, pool, timestamp } = result.params.result as BloxRouteNewLiquidityPool;
+              console.log('result.params.result', result.params.result);
+        
+              // Prepare data for console.table
+              let tokenAddress = ''
+              const tokenIsNative = pool.token1MintAddress === 'So11111111111111111111111111111111111111112' ? true : false;
+              
+              // console.log('result.params.result', result.params.result);
+              tokenAddress = tokenIsNative ? pool.token2MintAddress : pool.token1MintAddress;
+
+              let rugCheckResult: RugCheckMinSummary | undefined;
+              try {
+                const resultFromRugcheck = await rugCheck(tokenAddress);
+                if (!resultFromRugcheck) {
+                  throw new Error('No rug risk data found');
+                }
+                rugCheckResult = resultFromRugcheck
+              } catch (error) {
+                console.log('Unable to fetch rugcheck data:', error);
+              }
+
+              if (!rugCheckResult) {
+                return;
+              }
+
+              const tableData = [{
+                Slot: slot,
+                TokenSymbol: rugCheckResult.tokenMeta.symbol,
+                lpMint: pool.poolAddress,
+                TokenAddress: tokenAddress,
+                LaunchTime: timestamp,
+                isPumpFun: tokenAddress.includes('pump'),
+              }];
+
+              console.table(tableData);
+              console.log('Date time to timestamp ms', new Date(timestamp).getTime());
+
+              const payload = await verifyToken(result.params.result as BloxRouteNewLiquidityPool);
+
+              if (payload) {
+                ws.send(JSON.stringify({ targetTag: 'FROM_FRONTEND', payload }));
+              }
+
+            // this.localSocket?.send(JSON.stringify({ targetTag: 'ext', tokenAddress: tokenAddress, poolAddress: pool.poolAddress }));
           
-          // console.log('result.params.result', result.params.result);
-          tokenAddress = tokenIsNative ? pool.token2MintAddress : pool.token1MintAddress;
-
-          let rugCheckResult: RugCheckMinSummary | undefined;
-          try {
-            const resultFromRugcheck = await rugCheck(tokenAddress);
-            if (!resultFromRugcheck) {
-              throw new Error('No rug risk data found');
             }
-            rugCheckResult = resultFromRugcheck
-          } catch (error) {
-            console.log('Unable to fetch rugcheck data:', error);
-          }
-
-          if (!rugCheckResult) {
-            return;
-          }
-
-          const tableData = [{
-            Slot: slot,
-            TokenSymbol: rugCheckResult.tokenMeta.symbol,
-            lpMint: pool.poolAddress,
-            TokenAddress: tokenAddress,
-            LaunchTime: timestamp,
-            isPumpFun: tokenAddress.includes('pump'),
-          }];
-
-          console.table(tableData);
-          console.log('Date time to timestamp ms', new Date(timestamp).getTime());
-
-          await verifyToken(result.params.result as BloxRouteNewLiquidityPool);
-
-          // this.localSocket?.send(JSON.stringify({ targetTag: 'ext', tokenAddress: tokenAddress, poolAddress: pool.poolAddress }));
+          // const message: WebSocketMessage = JSON.parse(event.data);
+          // if (message.type === "message") {
+          //   if (message.data?.tx && this.transactions.has(message.data.tx)) {
+          //     return;
+          //   } else if (message.data?.tx) {
+          //     this.transactions.add(message.data.tx);
+          //   }
+          //   if (message.room.includes("price:")) {
+          //     this.emitter.emit(`price-by-token:${message.data.token}`, message.data);
+          //   }
+          //   this.emitter.emit(message.room, message.data);
+          // }
+        } catch (error) {
+          console.error("Error processing message:", error);
         }
-        // const message: WebSocketMessage = JSON.parse(event.data);
-        // if (message.type === "message") {
-        //   if (message.data?.tx && this.transactions.has(message.data.tx)) {
-        //     return;
-        //   } else if (message.data?.tx) {
-        //     this.transactions.add(message.data.tx);
-        //   }
-        //   if (message.room.includes("price:")) {
-        //     this.emitter.emit(`price-by-token:${message.data.token}`, message.data);
-        //   }
-        //   this.emitter.emit(message.room, message.data);
-        // }
-      } catch (error) {
-        console.error("Error processing message:", error);
       }
-    }
+    });
   }
 
   private disconnect() {

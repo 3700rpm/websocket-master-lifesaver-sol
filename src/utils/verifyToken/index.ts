@@ -27,9 +27,9 @@ const verifyToken = async (payloadFromBloxRoute: BloxRouteNewLiquidityPool) => {
 
     const IS_TRYING_TO_FAKE_PUMPFUN = rugCheckVerifierResult && rugCheckVerifierResult.pumpFunTokenType === 'FAKE_PUMP_FUN' ? true : false;
     const IS_IMMEDIATE_BONDING_CURVE_COMPLETED = rugCheckVerifierResult && rugCheckVerifierResult.effectiveTimeOfBondingCurve === 'IMMEDIATE_BONDING_CURVE_COMPLETED' ? true : false;
-    await tokenLogger.findOneAndUpdate({
+    
+    const payload = {
       tokenAddress,
-    }, {
       ticker: rugCheckReportRaw.tokenMeta.symbol,
       description: tokenJson?.description || 'No Description',
       image: tokenJson.image || 'No Image',
@@ -51,11 +51,18 @@ const verifyToken = async (payloadFromBloxRoute: BloxRouteNewLiquidityPool) => {
       lpLockedPercentage: rugCheckReportRaw.markets ? rugCheckReportRaw.markets[0].lp.lpLockedPct : 0,
       risk: 'UNDEFINED',
       tokenFreeAuthority: checkFromMetaplex?.mint?.freezeAuthorityAddress === null ? 'NULL' : 'THREAT',
-      tokenIsMintable: checkFromMetaplex?.mint?.mintAuthorityAddress === null ? 'NULL' : 'THREAT',
+      tokenIsMintAuthority: checkFromMetaplex?.mint?.mintAuthorityAddress === null ? 'NULL' : 'THREAT',
+    }
+    await tokenLogger.findOneAndUpdate({
+      tokenAddress: payload.tokenAddress,
+    }, {
+      ...payload,
     }, {
       upsert: true,
       new: true,
     }).exec();
+
+    return payload;
   } catch (error) {
     console.error('[verifyToken] ❌ Unable to fetch rugcheck data:', error);
   }
@@ -76,7 +83,7 @@ const checkForPumpFunToken = (rugCheckReportRaw: RugCheckTokenDetails, payloadFr
   const PUMP_FUN_MINT_AUTHORITY = 'TSLvdd1pWpHVjahSpsvCXUbgwsL3JAcvokwaKt1eokM';
   const isPumpFunTokenMint = rugCheckReportRaw.creator === PUMP_FUN_MINT_AUTHORITY ? true : false;
   const isPumpFunTokenUpdateAuthority = rugCheckReportRaw.tokenMeta.updateAuthority === PUMP_FUN_MINT_AUTHORITY ? true : false;
-  const isBundledSwapPumpFunCreation = isPumpFunTokenMint && !isPumpFunTokenUpdateAuthority ? true : false;
+  const isBundledSwapPumpFunCreation = !isPumpFunTokenMint && isPumpFunTokenUpdateAuthority ? true : false;
 
   let resultFrom: { timeDifference: number, effectiveTimeOfBondingCurve: string | null } | undefined = undefined;
   let pumpFunTokenType = '';
