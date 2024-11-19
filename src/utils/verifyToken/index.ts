@@ -4,6 +4,7 @@ import { BloxRouteNewLiquidityPool } from "../../interfaces/bloxRouteNewWebSocke
 import rugCheckReport, { Holder, RugCheckTokenDetails } from "../../rugcheck/fullReport";
 import { getWhitelistAccountInfoOwner, isMintFreezeAuthorityDisabled } from "../metaplexChecker";
 import KNOWN_TOKENS from "../tokens/knownTokens";
+import RawTokenLogger from "../../database/rawLogger";
 
 const verifyToken = async (payloadFromBloxRoute: BloxRouteNewLiquidityPool) => {
   try {
@@ -63,6 +64,21 @@ const verifyToken = async (payloadFromBloxRoute: BloxRouteNewLiquidityPool) => {
       new: true,
     }).exec();
 
+    await RawTokenLogger.findOneAndUpdate({
+      tokenAddress: payload.tokenAddress,
+    }, {
+      holders: rugCheckReportRaw.topHolders.map((holder) => {
+        return {
+          owner: holder.owner,
+          amount: holder.amount,
+          percentage: holder.pct,
+        }
+      }),
+    }, {
+      upsert: true,
+      new: true,
+    }).exec();
+    
     return payload;
   } catch (error) {
     console.error('[verifyToken] ❌ Unable to fetch rugcheck data:', error);

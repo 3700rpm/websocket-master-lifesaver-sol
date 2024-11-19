@@ -38,13 +38,21 @@ const localSocket = async (): Promise<void> => {
               console.log(`Client with tag ${message.tag} connected`);
             } else {
               console.log('Received message:', message);
+              wss.clients.forEach((client) => {
+                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                  client.send(JSON.stringify(message));
+                }
+              });
             }
+
+            ws.send(JSON.stringify({ from: 'server', message: message }));
 
             if (message.targetTag && clients[message.targetTag]) {
               // Forward the message to the client with the specified tag
-              clients[message.targetTag].send(
-                JSON.stringify({ from: 'server', message: message })
-              );
+              // clients[message.targetTag].send(
+              //   JSON.stringify({ from: 'server', message: message })
+              // );
+
               console.log(
                 `Forwarded message to ${message.targetTag}: "${message.message}"`
               );
